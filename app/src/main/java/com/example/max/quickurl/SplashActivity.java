@@ -19,7 +19,7 @@ public class SplashActivity extends Activity {
             public void run() {
                 try {
                     int SplashTimer = 0;
-                    while (SplashTimer < 3200) {
+                    while (SplashTimer < 2500) {
                         sleep(100);
                         SplashTimer = SplashTimer + 100;
                     }
