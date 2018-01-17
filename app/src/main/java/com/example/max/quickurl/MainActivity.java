@@ -38,6 +38,8 @@ public class MainActivity extends Activity {
         getDataFromDB();
 
         if (references.size() == 0) {
+            setPopularLinks();
+            getDataFromDB();
             final AlertDialog.Builder alert = new AlertDialog.Builder(this);
             alert.setTitle("QuickURL");
             alert.setMessage("Add new links to your application!");
@@ -56,11 +58,6 @@ public class MainActivity extends Activity {
         adapter.setCheckBox(checkBox);
         adapter.setCtxFromMain(this);
         listView.setAdapter(adapter);
-    }
-
-    public void openInfoActivity(View view) {
-        Intent intent = new Intent(this, InfoActivity.class);
-        startActivity(intent);
     }
 
     public void openDialog(final View view) {
@@ -85,12 +82,12 @@ public class MainActivity extends Activity {
                 } else if (link.getText().toString().contains("http")) {
                     Reference ref = new Reference(name.getText().toString(), link.getText().toString());
                     references.add(ref);
-                    addURL(ref);
+                    addURLtoSQLite(ref);
                     dialog.cancel();
                 } else {
                     Reference ref = new Reference(name.getText().toString(), "http://" + link.getText().toString());
                     references.add(ref);
-                    addURL(ref);
+                    addURLtoSQLite(ref);
                     dialog.cancel();
                 }
             }
@@ -104,7 +101,7 @@ public class MainActivity extends Activity {
         alert.show();
     }
 
-    public void addURL(Reference ref) {
+    public void addURLtoSQLite(Reference ref) {
         ContentValues contentValues = new ContentValues();
         contentValues.put(DBHelper.KEY_NAME, ref.name);
         contentValues.put(DBHelper.KEY_LINK, ref.URL);
@@ -122,5 +119,21 @@ public class MainActivity extends Activity {
             } while (cursor.moveToNext());
         }
         cursor.close();
+    }
+
+    public void setPopularLinks() {
+        String[] names = { "Google", "Wikipedia", "Facebook" };
+        String[] links = { "http://google.com", "http://wikipedia.com", "http://facebook.com" };
+        for (int i = 0; i < 5; i++) {
+            ContentValues contentValues = new ContentValues();
+            contentValues.put(DBHelper.KEY_NAME, names[i]);
+            contentValues.put(DBHelper.KEY_LINK, links[i]);
+            database.insert(DBHelper.TABLE_URL, null, contentValues);
+        }
+    }
+
+    public void goToInfoActivity(View view) {
+        Intent toInfo = new Intent(this, InfoActivity.class);
+        startActivity(toInfo);
     }
 }
