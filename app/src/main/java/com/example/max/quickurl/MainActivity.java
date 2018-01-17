@@ -2,9 +2,11 @@ package com.example.max.quickurl;
 
 import android.app.Activity;
 import android.app.AlertDialog;
+import android.content.ContentValues;
 import android.content.DialogInterface;
 import android.content.Intent;
-import android.content.res.Resources;
+import android.database.Cursor;
+import android.database.sqlite.SQLiteDatabase;
 import android.os.Bundle;
 import android.support.annotation.Nullable;
 import android.view.LayoutInflater;
@@ -14,26 +16,28 @@ import android.widget.EditText;
 import android.widget.ListView;
 import android.widget.Toast;
 
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.InputStreamReader;
-import java.io.OutputStreamWriter;
 import java.util.ArrayList;
+import java.util.List;
 
 public class MainActivity extends Activity {
 
-    ArrayList<Reference> list = new ArrayList<Reference>();
+    List<Reference> references;
     MyAdapter adapter;
+    SQLiteDatabase database;
+    DBHelper dbHelper;
 
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.main_layout);
 
-        list = getListFromString(readFromMemory());
+        references = new ArrayList<>();
 
-        if(list.size() == 0){
+        dbHelper = new DBHelper(this);
+        database = dbHelper.getWritableDatabase();
+        getDataFromDB();
+
+        if (references.size() == 0) {
             final AlertDialog.Builder alert = new AlertDialog.Builder(this);
             alert.setTitle("QuickURL");
             alert.setMessage("Add new links to your application!");
@@ -46,7 +50,7 @@ public class MainActivity extends Activity {
             alert.show();
         }
 
-        adapter = new MyAdapter(this, list);
+        adapter = new MyAdapter(this, references, dbHelper);
         ListView listView = (ListView) findViewById(R.id.listOfRef);
         CheckBox checkBox = (CheckBox) findViewById(R.id.checkBox);
         adapter.setCheckBox(checkBox);
@@ -54,12 +58,12 @@ public class MainActivity extends Activity {
         listView.setAdapter(adapter);
     }
 
-    public void openInfoActivity(View view){
+    public void openInfoActivity(View view) {
         Intent intent = new Intent(this, InfoActivity.class);
         startActivity(intent);
     }
 
-    public void openDialog(final View view){
+    public void openDialog(final View view) {
         final AlertDialog.Builder alert = new AlertDialog.Builder(this);
         alert.setTitle("Add new reference");
 
@@ -69,95 +73,54 @@ public class MainActivity extends Activity {
         alert.setView(viedForDialog);
 
         alert.setPositiveButton("Save", new DialogInterface.OnClickListener() {
-                @Override
-                public void onClick(DialogInterface dialog, int which) {
-                    final EditText name = (EditText) viedForDialog.findViewById(R.id.editName);
-                    final EditText link = (EditText) viedForDialog.findViewById(R.id.editURL);
-                    if(name.getText().toString().length() == 0 || link.getText().toString().length() == 0){
-                        Toast toast = Toast.makeText(getApplicationContext(), "Enter the data before you click \"Save\" !",
-                                Toast.LENGTH_LONG);
-                        dialog.cancel();
-                        toast.show();
-                    }
-                    else if(link.getText().toString().contains("http")){
-                        list.add(new Reference(name.getText().toString(), link.getText().toString()));
-                        writeToMemory(list);
-                        dialog.cancel();
-                    }
-                    else {
-                        list.add(new Reference(name.getText().toString(), "http://"+link.getText().toString()));
-                        writeToMemory(list);
-                        dialog.cancel();
-                    }
+            @Override
+            public void onClick(DialogInterface dialog, int which) {
+                final EditText name = (EditText) viedForDialog.findViewById(R.id.editName);
+                final EditText link = (EditText) viedForDialog.findViewById(R.id.editURL);
+                if (name.getText().toString().length() == 0 || link.getText().toString().length() == 0) {
+                    Toast toast = Toast.makeText(getApplicationContext(), "Enter the data before you click \"Save\" !",
+                            Toast.LENGTH_LONG);
+                    dialog.cancel();
+                    toast.show();
+                } else if (link.getText().toString().contains("http")) {
+                    Reference ref = new Reference(name.getText().toString(), link.getText().toString());
+                    references.add(ref);
+                    addURL(ref);
+                    dialog.cancel();
+                } else {
+                    Reference ref = new Reference(name.getText().toString(), "http://" + link.getText().toString());
+                    references.add(ref);
+                    addURL(ref);
+                    dialog.cancel();
                 }
-            });
+            }
+        });
         alert.setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
-                    @Override
-                    public void onClick(DialogInterface dialog, int which) {
-                        dialog.cancel();
-                    }
-                });
+            @Override
+            public void onClick(DialogInterface dialog, int which) {
+                dialog.cancel();
+            }
+        });
         alert.show();
     }
 
-    public String readFromMemory(){
-        String fromMemory = "";
-        try {
-            FileInputStream fIn = openFileInput("infoURL.txt");
-            InputStreamReader isr = new InputStreamReader(fIn);
-            int i = -1;
-            while ((i=fIn.read()) != -1){
-                fromMemory += (char)i;
-            }
-        }
-        catch (Resources.NotFoundException ex) {
-        }
-        catch (IOException e) {
-            e.printStackTrace();
-        }
-        return fromMemory;
+    public void addURL(Reference ref) {
+        ContentValues contentValues = new ContentValues();
+        contentValues.put(DBHelper.KEY_NAME, ref.name);
+        contentValues.put(DBHelper.KEY_LINK, ref.URL);
+        database.insert(DBHelper.TABLE_URL, null, contentValues);
     }
 
-    public void writeToMemory(ArrayList<Reference> list){
-        String str = "";
-        for (int i = 0; i < list.size(); i++){
-            str += list.get(i).name + " ";
-            str += list.get(i).URL + " ";
-        }
+    public void getDataFromDB() {
+        Cursor cursor = database.query(DBHelper.TABLE_URL, null, null, null, null, null, null);
 
-        try {
-            FileOutputStream fOut = openFileOutput("infoURL.txt", MODE_PRIVATE);
-            OutputStreamWriter osw = new OutputStreamWriter(fOut);
-            osw.write(str);
-            osw.flush();
-            osw.close();
+        if (cursor.moveToFirst()) {
+            int nameIndex = cursor.getColumnIndex(DBHelper.KEY_NAME);
+            int linkIndex = cursor.getColumnIndex(DBHelper.KEY_LINK);
+            do {
+                references.add(new Reference(cursor.getString(nameIndex), cursor.getString(linkIndex)));
+            } while (cursor.moveToNext());
         }
-        catch (Resources.NotFoundException ex) {
-        }
-        catch (IOException e){
-            e.printStackTrace();
-        }
-    }
-
-    public static ArrayList<Reference> getListFromString(String str){
-        ArrayList<Reference> URL_list = new ArrayList<>();
-        if(str.length() > 0) {
-            String[] array = str.split(" ");
-
-            ArrayList<String> names = new ArrayList<>(array.length / 2);
-            ArrayList<String> references = new ArrayList<>(array.length / 2);
-            for (int i = 0; i < array.length; i++) {
-                if (i % 2 == 0) {
-                    names.add(array[i]);
-                } else {
-                    references.add(array[i]);
-                }
-            }
-
-            for (int i = 0; i < names.size(); i++) {
-                URL_list.add(new Reference(names.get(i), references.get(i)));
-            }
-        }
-        return URL_list;
+        cursor.close();
     }
 }

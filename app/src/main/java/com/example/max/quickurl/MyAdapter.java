@@ -1,12 +1,14 @@
 package com.example.max.quickurl;
 
 import android.app.AlertDialog;
+import android.content.ContentValues;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
-import android.content.res.Resources;
+import android.database.sqlite.SQLiteDatabase;
 import android.net.Uri;
 import android.support.design.widget.FloatingActionButton;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -16,28 +18,25 @@ import android.widget.CheckBox;
 import android.widget.EditText;
 import android.widget.TextView;
 
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.OutputStreamWriter;
-import java.util.ArrayList;
-
-import static android.content.Context.MODE_PRIVATE;
+import java.util.List;
 
 public class MyAdapter extends BaseAdapter {
 
     Context ctx;
     LayoutInflater LInflater;
-    ArrayList<Reference> objects;
+    List<Reference> objects;
     Button openBrowser;
     CheckBox checkBox;
     Context ctxFromMain;
     FloatingActionButton delete;
     TextView editItem;
+    SQLiteDatabase database;
 
-    MyAdapter(Context context, ArrayList<Reference> list) {
+    MyAdapter(Context context, List<Reference> list, DBHelper dbHelper) {
         ctx = context;
         objects = list;
         LInflater = (LayoutInflater) ctx.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
+        database = dbHelper.getWritableDatabase();
     }
 
     @Override
@@ -94,25 +93,10 @@ public class MyAdapter extends BaseAdapter {
                 alert.setPositiveButton("Yes", new DialogInterface.OnClickListener() {
                     @Override
                     public void onClick(DialogInterface dialog, int which) {
+                        Reference ref = objects.get(position);
+                        database.delete(DBHelper.TABLE_URL,DBHelper.KEY_NAME + "= ?", new String[] {ref.name});
                         objects.remove(position);
                         notifyDataSetChanged();
-
-                        String str = "";
-                        for (int i = 0; i < objects.size(); i++) {
-                            str += objects.get(i).name + " ";
-                            str += objects.get(i).URL + " ";
-                        }
-                        try {
-                            FileOutputStream fOut = parent.getContext().openFileOutput("infoURL.txt", MODE_PRIVATE);
-                            OutputStreamWriter osw = new OutputStreamWriter(fOut);
-                            osw.write(str);
-                            osw.flush();
-                            osw.close();
-                        }
-                        catch (Resources.NotFoundException ex) { }
-                        catch (IOException e) {
-                            e.printStackTrace();
-                        }
                     }
                 });
                 alert.setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
@@ -149,9 +133,15 @@ public class MyAdapter extends BaseAdapter {
                 alert.setPositiveButton("Save changes", new DialogInterface.OnClickListener() {
                     @Override
                     public void onClick(DialogInterface dialog, int which) {
-                        String nameAfter = name.getText().toString();
-                        String linkAfter = link.getText().toString();
-                        objects.set(position, new Reference(nameAfter, linkAfter));
+                        Reference ref = objects.get(position);
+                        String oldName = ref.name;
+                        ref.name = name.getText().toString();
+                        ref.URL = link.getText().toString();
+                        ContentValues contentValues = new ContentValues();
+                        contentValues.put(DBHelper.KEY_NAME, ref.name);
+                        contentValues.put(DBHelper.KEY_LINK, ref.URL);
+                        database.update(DBHelper.TABLE_URL, contentValues, DBHelper.KEY_NAME + "= ?", new String[] {oldName});
+                        objects.set(position, ref);
                         dialog.cancel();
                     }
                 });
@@ -175,5 +165,4 @@ public class MyAdapter extends BaseAdapter {
     public void setCtxFromMain(Context context) {
         ctxFromMain = context;
     }
-
 }
