@@ -16,7 +16,6 @@ public class WebActivity extends Activity {
         setContentView(R.layout.open_url);
 
         String URL = getIntent().getStringExtra("URL");
-
         mWebView = (WebView) findViewById(R.id.webView);
         mWebView.setWebViewClient(new WebViewClient());
         mWebView.loadUrl(URL);

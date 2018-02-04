@@ -71,6 +71,7 @@ public class MyAdapter extends BaseAdapter {
             @Override
             public void onClick(View v) {
                 String URL = getItem(position).URL;
+                Log.d("Link to open", URL);
                 Intent intent;
 
                 if (checkBox.isChecked()) {

@@ -91,7 +91,7 @@
         android:layout_alignRight="@+id/addNewRef"
         android:layout_marginTop="7dp"
         android:clickable="true"
-        android:onClick="openInfoActivity"
+        android:onClick="goToInfoActivity"
         android:text="About"
         android:textAppearance="@style/TextAppearance.AppCompat"
         android:textColor="@color/colorWhite"
