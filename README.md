@@ -9,5 +9,5 @@ RU:
 
 Вы можете сохранять/удалять/редактировать ссылки и окрывать их быстро в браузере либо в этом приложении. Программа сохраняет все данные в памяти устройства (база данных SQLite) и может адаптироваться под разные размеры экранов.
 ________________________________________________________________________
-![alt text](https://github.com/Max-Tkachenko/QuickURL/blob/master/screenshots/11.png)
-![alt text](https://github.com/Max-Tkachenko/QuickURL/blob/master/screenshots/12.png)
+![alt text](https://github.com/Max-Tkachenko/QuickURL/blob/Commit_to_GitHub/screenshots/11.png)
+![alt text](https://github.com/Max-Tkachenko/QuickURL/blob/Commit_to_GitHub/screenshots/12.png)
