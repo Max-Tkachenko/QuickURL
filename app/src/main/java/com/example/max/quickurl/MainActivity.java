@@ -124,7 +124,7 @@ public class MainActivity extends Activity {
     public void setPopularLinks() {
         String[] names = { "Google", "Wikipedia", "Amazon" };
         String[] links = { "http://google.com", "http://wikipedia.com", "http://amazon.com" };
-        for (int i = 0; i < 5; i++) {
+        for (int i = 0; i < 3; i++) {
             ContentValues contentValues = new ContentValues();
             contentValues.put(DBHelper.KEY_NAME, names[i]);
             contentValues.put(DBHelper.KEY_LINK, links[i]);
